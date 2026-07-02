@@ -23,16 +23,28 @@ def init_db():
 
 import logging
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 @app.route("/")
 def index():
     try:
+        logger.info("Fetching notes from database")
+
         conn = sqlite3.connect(DATABASE)
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM notes")
         notes = cursor.fetchall()
         conn.close()
+
+        logger.info(f"Successfully retrieved {len(notes)} notes")
+
         return render_template("index.html", notes=notes)
+
     except Exception as e:
+        logger.error(f"Error retrieving notes: {e}")
+
         return "Error retrieving notes", 500
 
 
