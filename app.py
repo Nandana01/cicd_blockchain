@@ -67,22 +67,65 @@ def add_note():
 
     return redirect(url_for("index"))
 
-
 @app.route("/delete/<int:id>")
 def delete_note(id):
 
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
+    try:
+        logger.info(f"Delete request received for note ID: {id}")
 
-    cursor.execute(
-        "DELETE FROM notes WHERE id=?",
-        (id,)
-    )
+        logger.info("Connecting to SQLite database")
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        logger.info("Database connection established successfully")
 
-    conn.commit()
-    conn.close()
+        logger.info(f"Checking if note exists with ID: {id}")
+        cursor.execute(
+            "SELECT * FROM notes WHERE id=?",
+            (id,)
+        )
 
-    return redirect(url_for("index"))
+        note = cursor.fetchone()
+
+        if note is None:
+            logger.warning(f"No note found with ID: {id}")
+            conn.close()
+            return "Note not found", 404
+
+        logger.info(f"Note found: {note}")
+
+        logger.info(f"Executing DELETE query for note ID: {id}")
+        cursor.execute(
+            "DELETE FROM notes WHERE id=?",
+            (id,)
+        )
+
+        logger.info("Committing database changes")
+        conn.commit()
+
+        logger.info(f"Note with ID {id} deleted successfully")
+
+        logger.info("Closing database connection")
+        conn.close()
+
+        logger.info("Redirecting user to home page")
+
+        return redirect(url_for("index"))
+
+    except sqlite3.Error as db_error:
+
+        logger.error(
+            f"SQLite database error while deleting note ID {id}: {db_error}"
+        )
+
+        return "Database Error", 500
+
+    except Exception as e:
+
+        logger.error(
+            f"Unexpected error while deleting note ID {id}: {e}"
+        )
+
+        return "Application Error", 500
 
 
 @app.route("/edit/<int:id>")
